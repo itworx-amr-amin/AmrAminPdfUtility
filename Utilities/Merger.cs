@@ -1,10 +1,11 @@
 ﻿
+using System.Text.RegularExpressions;
 using PdfSharpCore.Pdf;
 using PdfSharpCore.Pdf.IO;
 
 namespace AmrAminPdfUtility.Utilities;
 
-public static class Merger
+public static partial class Merger
 {
     public static void MergePdfFiles()
     {
@@ -167,8 +168,10 @@ public static class Merger
                 continue;
             }
 
+            // Sort files using natural alphanumeric order so that numbered files
+            // appear in intuitive sequence (e.g., 1, 2, 10 instead of 1, 10, 2)
             var pdfFiles = Directory.GetFiles(folderPath, "*.pdf", SearchOption.TopDirectoryOnly)
-                                    .OrderBy(f => f)
+                                    .OrderBy(Path.GetFileName, NaturalStringComparer.Instance)
                                     .ToList();
 
             if (pdfFiles.Count == 0)
@@ -246,5 +249,76 @@ public static class Merger
         }
 
         return filePaths;
+    }
+
+    /// <summary>
+    /// A comparer that sorts strings in natural alphanumeric order.
+    /// This ensures that numeric portions of strings are compared as numbers rather than text,
+    /// so "file2" comes before "file10" instead of after it.
+    /// </summary>
+    /// <example>
+    /// Standard string comparison: "1", "10", "11", "2", "20", "3"
+    /// Natural string comparison:  "1", "2", "3", "10", "11", "20"
+    /// </example>
+    private sealed partial class NaturalStringComparer : IComparer<string>
+    {
+        /// <summary>
+        /// Gets a singleton instance of the <see cref="NaturalStringComparer"/>.
+        /// </summary>
+        public static NaturalStringComparer Instance { get; } = new();
+
+        /// <summary>
+        /// A source-generated regex that splits a string into chunks of consecutive digits or non-digits.
+        /// </summary>
+        [GeneratedRegex(@"(\d+|\D+)")]
+        private static partial Regex ChunkPattern();
+
+        /// <summary>
+        /// Compares two strings using natural alphanumeric ordering.
+        /// </summary>
+        /// <param name="x">The first string to compare.</param>
+        /// <param name="y">The second string to compare.</param>
+        /// <returns>
+        /// A negative value if <paramref name="x"/> precedes <paramref name="y"/>,
+        /// zero if they are equal, or a positive value if <paramref name="x"/> follows <paramref name="y"/>.
+        /// </returns>
+        public int Compare(string? x, string? y)
+        {
+            if (x is null && y is null) return 0;
+            if (x is null) return -1;
+            if (y is null) return 1;
+
+            var xChunks = ChunkPattern().Matches(x);
+            var yChunks = ChunkPattern().Matches(y);
+
+            int minChunks = Math.Min(xChunks.Count, yChunks.Count);
+
+            for (int i = 0; i < minChunks; i++)
+            {
+                var xChunk = xChunks[i].Value;
+                var yChunk = yChunks[i].Value;
+
+                int result;
+
+                if (char.IsDigit(xChunk[0]) && char.IsDigit(yChunk[0]))
+                {
+                    // Both chunks are numeric - compare as numbers
+                    var xNum = long.Parse(xChunk);
+                    var yNum = long.Parse(yChunk);
+                    result = xNum.CompareTo(yNum);
+                }
+                else
+                {
+                    // At least one chunk is non-numeric - compare as strings (case-insensitive)
+                    result = string.Compare(xChunk, yChunk, StringComparison.OrdinalIgnoreCase);
+                }
+
+                if (result != 0)
+                    return result;
+            }
+
+            // If all compared chunks are equal, the shorter string comes first
+            return xChunks.Count.CompareTo(yChunks.Count);
+        }
     }
 }
