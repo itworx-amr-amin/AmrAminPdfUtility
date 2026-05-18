@@ -72,49 +72,70 @@ public static class Signer
             return;
         }
 
-        // Ask for pages to sign
+        // Ask for page selection mode
         ConsoleHelper.WriteSubHeader("Page Selection");
-        ConsoleHelper.WriteInfo("Enter page numbers separated by comma (e.g., 1,3,5,7)");
-        ConsoleHelper.WriteInfo("Or press Enter to sign ALL pages in each PDF.");
-        ConsoleHelper.WritePrompt("Pages to sign: ");
+        Console.WriteLine();
+        ConsoleHelper.WriteMenuOption("1", "Sign ALL pages in each PDF");
+        ConsoleHelper.WriteMenuOption("2", "Sign specific pages only");
+        Console.WriteLine();
+        ConsoleHelper.WritePrompt("Choose page selection mode (1 or 2): ");
 
-        var pageInput = Console.ReadLine()?.Trim();
+        var pageMode = Console.ReadLine()?.Trim();
         List<int>? specificPages = null;
 
-        if (!string.IsNullOrWhiteSpace(pageInput))
+        if (pageMode == "2")
         {
-            specificPages = [];
-            var parts = pageInput.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
-
-            foreach (var part in parts)
+            // Specific pages mode
+            while (true)
             {
-                if (int.TryParse(part, out int pageNum) && pageNum >= 1)
+                ConsoleHelper.WriteInfo("Enter page numbers separated by comma (e.g., 1,3,5,7)");
+                ConsoleHelper.WritePrompt("Pages to sign: ");
+
+                var pageInput = Console.ReadLine()?.Trim();
+
+                if (string.IsNullOrWhiteSpace(pageInput))
                 {
-                    if (!specificPages.Contains(pageNum))
+                    ConsoleHelper.WriteWarning("Please enter at least one page number.");
+                    continue;
+                }
+
+                specificPages = [];
+                var parts = pageInput.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                foreach (var part in parts)
+                {
+                    if (int.TryParse(part, out int pageNum) && pageNum >= 1)
                     {
-                        specificPages.Add(pageNum);
+                        if (!specificPages.Contains(pageNum))
+                        {
+                            specificPages.Add(pageNum);
+                        }
+                    }
+                    else
+                    {
+                        ConsoleHelper.WriteWarning($"Invalid page number '{part}', skipping.");
                     }
                 }
-                else
-                {
-                    ConsoleHelper.WriteWarning($"Invalid page number '{part}', skipping.");
-                }
-            }
 
-            if (specificPages.Count == 0)
-            {
-                ConsoleHelper.WriteInfo("No valid pages specified. Will sign ALL pages.");
-                specificPages = null;
-            }
-            else
-            {
+                if (specificPages.Count == 0)
+                {
+                    ConsoleHelper.WriteWarning("No valid pages specified. Please try again.");
+                    continue;
+                }
+
                 specificPages.Sort();
                 ConsoleHelper.WriteSuccess($"Will sign pages: {string.Join(", ", specificPages)}");
+                break;
             }
+        }
+        else if (pageMode == "1" || string.IsNullOrWhiteSpace(pageMode))
+        {
+            ConsoleHelper.WriteInfo("Will sign ALL pages in each PDF.");
         }
         else
         {
-            ConsoleHelper.WriteInfo("Will sign ALL pages in each PDF.");
+            ConsoleHelper.WriteError("Invalid option selected.");
+            return;
         }
 
         // Ask for signature position
