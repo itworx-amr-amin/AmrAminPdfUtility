@@ -15,6 +15,7 @@ namespace AmrAminPdfUtility
             ConsoleHelper.WriteMenuOption("1", "Merge multiple PDF files into one");
             ConsoleHelper.WriteMenuOption("2", "Extract pages from a PDF file");
             ConsoleHelper.WriteMenuOption("3", "Rotate pages in a PDF file");
+            ConsoleHelper.WriteMenuOption("4", "Add signature to PDF pages");
             ConsoleHelper.WriteMenuOption("Q", "Quit application");
             Console.WriteLine();
             ConsoleHelper.WriteDivider();
@@ -33,6 +34,9 @@ namespace AmrAminPdfUtility
                     break;
                 case "3":
                     Rotator.RotatePdfPages();
+                    break;
+                case "4":
+                    Signer.SignPdfFiles();
                     break;
                 case "q":
                     ConsoleHelper.WriteGoodbye();
