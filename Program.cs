@@ -6,12 +6,21 @@ namespace AmrAminPdfUtility
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("==== Welcome to Amr Amin Pdf utilities ====\n\n\n");
-            Console.WriteLine("1. Merge PDF files");
-            Console.WriteLine("2. Extract PDF pages");
-            Console.Write("Select an option: ");
-            var choice = Console.ReadLine();
-            Console.WriteLine("\n\n\n");
+            Console.OutputEncoding = System.Text.Encoding.UTF8;
+
+            ConsoleHelper.WriteHeader("🔧 AMR AMIN PDF UTILITY 🔧");
+
+            ConsoleHelper.WriteSubHeader("Main Menu");
+            Console.WriteLine();
+            ConsoleHelper.WriteMenuOption("1", "Merge multiple PDF files into one");
+            ConsoleHelper.WriteMenuOption("2", "Extract pages from a PDF file");
+            ConsoleHelper.WriteMenuOption("Q", "Quit application");
+            Console.WriteLine();
+            ConsoleHelper.WriteDivider();
+            ConsoleHelper.WritePrompt("Select an option: ");
+
+            var choice = Console.ReadLine()?.Trim().ToLower();
+            Console.WriteLine();
 
             switch (choice)
             {
@@ -21,10 +30,15 @@ namespace AmrAminPdfUtility
                 case "2":
                     Extractor.ExtractPdfFiles();
                     break;
+                case "q":
+                    ConsoleHelper.WriteGoodbye();
+                    return;
                 default:
-                    Console.WriteLine("Invalid option.");
+                    ConsoleHelper.WriteError("Invalid option. Please run the application again.");
                     break;
             }
+
+            ConsoleHelper.WriteGoodbye();
         }
     }
 }

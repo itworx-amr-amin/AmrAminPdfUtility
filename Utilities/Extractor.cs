@@ -7,31 +7,32 @@ public static class Extractor
 {
     public static void ExtractPdfFiles()
     {
-        Console.WriteLine("=== Welcome to PDF Page Extractor BY Amr Amin ===\n");
+        ConsoleHelper.WriteHeader("✂️ PDF PAGE EXTRACTOR ✂️");
 
         // Ask for the source PDF file
+        ConsoleHelper.WriteSubHeader("Source File");
         string sourcePath;
         int totalPages;
         while (true)
         {
-            Console.Write("Enter the path for the source PDF file: ");
+            ConsoleHelper.WritePrompt("Enter the PDF file path: ");
             sourcePath = Console.ReadLine()?.Trim().Trim('"') ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(sourcePath))
             {
-                Console.WriteLine("Path cannot be empty. Please try again.\n");
+                ConsoleHelper.WriteWarning("Path cannot be empty. Please try again.");
                 continue;
             }
 
             if (!File.Exists(sourcePath))
             {
-                Console.WriteLine($"File not found: {sourcePath}. Please try again.\n");
+                ConsoleHelper.WriteError($"File not found: {sourcePath}");
                 continue;
             }
 
             if (!sourcePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
             {
-                Console.WriteLine("File must be a PDF. Please try again.\n");
+                ConsoleHelper.WriteWarning("File must be a PDF. Please try again.");
                 continue;
             }
 
@@ -40,67 +41,75 @@ public static class Extractor
             {
                 using var tempDoc = PdfReader.Open(sourcePath, PdfDocumentOpenMode.Import);
                 totalPages = tempDoc.PageCount;
-                Console.WriteLine($"PDF has {totalPages} page(s).\n");
+                ConsoleHelper.WriteSuccess($"Loaded: {Path.GetFileName(sourcePath)}");
+                ConsoleHelper.WriteInfo($"This PDF contains {totalPages} page(s).");
                 break;
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error reading PDF: {ex.Message}. Please try again.\n");
+                ConsoleHelper.WriteError($"Error reading PDF: {ex.Message}");
                 continue;
             }
         }
+
+        // Ask for page range
+        ConsoleHelper.WriteSubHeader("Page Range");
 
         // Ask for start page
         int startPage;
         while (true)
         {
-            Console.Write($"Enter the start page (1 to {totalPages}): ");
+            ConsoleHelper.WritePrompt($"Start page (1 to {totalPages}): ");
             if (int.TryParse(Console.ReadLine(), out startPage) && startPage >= 1 && startPage <= totalPages)
             {
                 break;
             }
-            Console.WriteLine($"Please enter a valid page number between 1 and {totalPages}.\n");
+            ConsoleHelper.WriteWarning($"Please enter a valid page number between 1 and {totalPages}.");
         }
 
         // Ask for end page
         int endPage;
         while (true)
         {
-            Console.Write($"Enter the end page ({startPage} to {totalPages}): ");
+            ConsoleHelper.WritePrompt($"End page ({startPage} to {totalPages}): ");
             if (int.TryParse(Console.ReadLine(), out endPage) && endPage >= startPage && endPage <= totalPages)
             {
                 break;
             }
-            Console.WriteLine($"Please enter a valid page number between {startPage} and {totalPages}.\n");
+            ConsoleHelper.WriteWarning($"Please enter a valid page number between {startPage} and {totalPages}.");
         }
 
+        ConsoleHelper.WriteInfo($"Will extract pages {startPage} to {endPage} ({endPage - startPage + 1} page(s)).");
+
         // Ask for output directory
+        ConsoleHelper.WriteSubHeader("Output Location");
         string outputDirectory;
         while (true)
         {
-            Console.Write("\nEnter the directory path to save the extracted PDF: ");
+            ConsoleHelper.WritePrompt("Save extracted PDF to directory: ");
             outputDirectory = Console.ReadLine()?.Trim().Trim('"') ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(outputDirectory))
             {
-                Console.WriteLine("Directory path cannot be empty. Please try again.");
+                ConsoleHelper.WriteWarning("Directory path cannot be empty. Please try again.");
                 continue;
             }
 
             if (!Directory.Exists(outputDirectory))
             {
-                Console.Write("Directory does not exist. Create it? (y/n): ");
+                ConsoleHelper.WritePrompt("Directory doesn't exist. Create it? (y/n): ");
                 var response = Console.ReadLine()?.Trim().ToLower();
                 if (response == "y" || response == "yes")
                 {
                     try
                     {
                         Directory.CreateDirectory(outputDirectory);
+                        ConsoleHelper.WriteSuccess("Directory created successfully!");
                         break;
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Failed to create directory: {ex.Message}");
+                        ConsoleHelper.WriteError($"Failed to create directory: {ex.Message}");
                         continue;
                     }
                 }
@@ -115,7 +124,9 @@ public static class Extractor
         var outputPath = Path.Combine(outputDirectory, outputFileName);
 
         // Extract pages
-        Console.WriteLine("\nExtracting PDF pages...");
+        ConsoleHelper.WriteSubHeader("Processing");
+        ConsoleHelper.WriteInfo("Extracting PDF pages...");
+        ConsoleHelper.WriteDivider();
 
         try
         {
@@ -124,20 +135,25 @@ public static class Extractor
 
             for (int i = startPage - 1; i < endPage; i++)
             {
-                Console.WriteLine($"  Extracting page: {i + 1}");
+                ConsoleHelper.WriteProgress($"Extracting page {i + 1}...");
                 outputDocument.AddPage(inputDocument.Pages[i]);
             }
 
             outputDocument.Save(outputPath);
 
             var extractedCount = endPage - startPage + 1;
-            Console.WriteLine($"\n✓ Successfully extracted {extractedCount} page(s)!");
-            Console.WriteLine($"✓ Pages {startPage} to {endPage} from: {Path.GetFileName(sourcePath)}");
-            Console.WriteLine($"✓ Output saved to: {outputPath}");
+            ConsoleHelper.WriteResultBox(
+                "✓ EXTRACTION COMPLETED SUCCESSFULLY!",
+                $"Pages extracted: {extractedCount}",
+                $"Range: Pages {startPage} to {endPage}",
+                $"Source: {Path.GetFileName(sourcePath)}",
+                $"Output: {outputFileName}",
+                $"Location: {outputDirectory}"
+            );
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\n✗ Error extracting PDF pages: {ex.Message}");
+            ConsoleHelper.WriteError($"Error extracting PDF pages: {ex.Message}");
         }
     }
 }

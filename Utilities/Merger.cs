@@ -8,80 +8,84 @@ public static class Merger
 {
     public static void MergePdfFiles()
     {
-
-        Console.WriteLine("=== Welcome to PDF Merger BY Amr Amin ===\n");
+        ConsoleHelper.WriteHeader("📄 PDF MERGER 📄");
 
         // Ask for the count of files to merge
         int fileCount;
         while (true)
         {
-            Console.Write("Enter the number of PDF files to merge: ");
+            ConsoleHelper.WritePrompt("How many PDF files would you like to merge? ");
             if (int.TryParse(Console.ReadLine(), out fileCount) && fileCount >= 2)
             {
+                ConsoleHelper.WriteInfo($"Great! You'll be merging {fileCount} PDF files.");
                 break;
             }
-            Console.WriteLine("Please enter a valid number (at least 2 files required).\n");
+            ConsoleHelper.WriteWarning("Please enter a valid number (at least 2 files required).");
         }
 
         // Collect file paths
+        ConsoleHelper.WriteSubHeader("Input Files");
         var filePaths = new List<string>();
         for (int i = 1; i <= fileCount; i++)
         {
             while (true)
             {
-                Console.Write($"Enter the path for PDF file {i}: ");
+                ConsoleHelper.WritePrompt($"PDF file {i} of {fileCount}: ");
                 var path = Console.ReadLine()?.Trim().Trim('"');
 
                 if (string.IsNullOrWhiteSpace(path))
                 {
-                    Console.WriteLine("Path cannot be empty. Please try again.\n");
+                    ConsoleHelper.WriteWarning("Path cannot be empty. Please try again.");
                     continue;
                 }
 
                 if (!File.Exists(path))
                 {
-                    Console.WriteLine($"File not found: {path}. Please try again.\n");
+                    ConsoleHelper.WriteError($"File not found: {path}");
                     continue;
                 }
 
                 if (!path.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("File must be a PDF. Please try again.\n");
+                    ConsoleHelper.WriteWarning("File must be a PDF. Please try again.");
                     continue;
                 }
 
+                ConsoleHelper.WriteSuccess($"Added: {Path.GetFileName(path)}");
                 filePaths.Add(path);
                 break;
             }
         }
 
         // Ask for output directory
+        ConsoleHelper.WriteSubHeader("Output Location");
         string outputDirectory;
         while (true)
         {
-            Console.Write("\nEnter the directory path to save the merged PDF: ");
+            ConsoleHelper.WritePrompt("Save merged PDF to directory: ");
             outputDirectory = Console.ReadLine()?.Trim().Trim('"') ?? string.Empty;
 
             if (string.IsNullOrWhiteSpace(outputDirectory))
             {
-                Console.WriteLine("Directory path cannot be empty. Please try again.");
+                ConsoleHelper.WriteWarning("Directory path cannot be empty. Please try again.");
                 continue;
             }
 
             if (!Directory.Exists(outputDirectory))
             {
-                Console.Write("Directory does not exist. Create it? (y/n): ");
+                ConsoleHelper.WritePrompt("Directory doesn't exist. Create it? (y/n): ");
                 var response = Console.ReadLine()?.Trim().ToLower();
                 if (response == "y" || response == "yes")
                 {
                     try
                     {
                         Directory.CreateDirectory(outputDirectory);
+                        ConsoleHelper.WriteSuccess("Directory created successfully!");
                         break;
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine($"Failed to create directory: {ex.Message}");
+                        ConsoleHelper.WriteError($"Failed to create directory: {ex.Message}");
                         continue;
                     }
                 }
@@ -96,7 +100,9 @@ public static class Merger
         var outputPath = Path.Combine(outputDirectory, outputFileName);
 
         // Merge PDFs
-        Console.WriteLine("\nMerging PDF files...");
+        ConsoleHelper.WriteSubHeader("Processing");
+        ConsoleHelper.WriteInfo("Merging PDF files...");
+        ConsoleHelper.WriteDivider();
 
         try
         {
@@ -104,7 +110,7 @@ public static class Merger
 
             foreach (var filePath in filePaths)
             {
-                Console.WriteLine($"  Processing: {Path.GetFileName(filePath)}");
+                ConsoleHelper.WriteProgress($"Processing: {Path.GetFileName(filePath)}");
                 using var inputDocument = PdfReader.Open(filePath, PdfDocumentOpenMode.Import);
 
                 for (int i = 0; i < inputDocument.PageCount; i++)
@@ -115,14 +121,17 @@ public static class Merger
 
             outputDocument.Save(outputPath);
 
-            Console.WriteLine($"\n✓ Successfully merged {filePaths.Count} PDF files!");
-            Console.WriteLine($"✓ Total pages: {outputDocument.PageCount}");
-            Console.WriteLine($"✓ Output saved to: {outputPath}");
+            ConsoleHelper.WriteResultBox(
+                "✓ MERGE COMPLETED SUCCESSFULLY!",
+                $"Files merged: {filePaths.Count}",
+                $"Total pages: {outputDocument.PageCount}",
+                $"Output: {outputFileName}",
+                $"Location: {outputDirectory}"
+            );
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\n✗ Error merging PDFs: {ex.Message}");
+            ConsoleHelper.WriteError($"Error merging PDFs: {ex.Message}");
         }
-
     }
 }
